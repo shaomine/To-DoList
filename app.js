@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
@@ -10,17 +11,17 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 app.use(express.static("public"));
+
 // mongoose.connect("mongodb://localhost:27017/todoListDB", {
 //   useUnifiedTopology: true
 // });
 
-mongoose.connect("mongodb+srv://admin-sha:moneyswe@cluster0.huqzl.mongodb.net/todoListDB?retryWrites=true&w=majority", {
+const mongoURL = "mongodb+srv://admin-sha:"+process.env.MONGOPWD+"@cluster0.huqzl.mongodb.net/todoListDB?retryWrites=true&w=majority";
+mongoose.connect(mongoURL, {
   useUnifiedTopology: true,
   useNewUrlParser: true
 });
 
-//const items=["Task1","Task2","Task 3"];
-//const workItems = [];
 const itemSchema = new mongoose.Schema({
   name: String
 });
@@ -44,8 +45,6 @@ const item3 = new Item({
 });
 
 const defaultItems = [item1, item2, item3];
-
-
 
 app.get("/", function(req, res) {
 
@@ -141,7 +140,7 @@ app.post("/delete",function(req,res){
 
 let port = process.env.PORT;
 if (port == null || port == "") {
-  port = 3000;
+  port = 4000;
 }
 app.listen(port, function() {
   console.log("Server started at port 3000");
