@@ -2,8 +2,11 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const date = require(__dirname + "/date.js");
+// const date = require(__dirname + "/date.js");
 const _ = require("lodash");
+const session = require("express-session");
+const passport = require("passport");
+const passportLocalMongoose = require("passport-local-mongoose");
 
 const app = express();
 app.set("view engine", "ejs");
@@ -12,15 +15,30 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(express.static("public"));
 
+//setup session
+app.use(session({
+  secret:"SECRET",
+  resave:false,
+  saveUninitialized:false
+}));
+
+//setup passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 // mongoose.connect("mongodb://localhost:27017/todoListDB", {
 //   useUnifiedTopology: true
 // });
 
+//forming mongodbURL
 const mongoURL = "mongodb+srv://admin-sha:"+process.env.MONGOPWD+"@cluster0.huqzl.mongodb.net/todoListDB?retryWrites=true&w=majority";
+
+//connecting to mongo url
 mongoose.connect(mongoURL, {
   useUnifiedTopology: true,
   useNewUrlParser: true
 });
+mongoose.set("useCreateIndex", true);
 
 const itemSchema = new mongoose.Schema({
   name: String
@@ -31,22 +49,37 @@ const listSchema = new mongoose.Schema({
   items:[itemSchema]
 });
 
+const userSchema = new mongoose.Schema({
+  user : String,
+  password: String,
+  list : [listSchema]
+});
+
+userSchema.plugin(passportLocalMongoose);
+// userSchema.plugin(findOrCreate);
+
 const Item = mongoose.model("Item", itemSchema);
 const List = mongoose.model("List",listSchema);
+const User = mongoose.model("User", userSchema);
 
 const item1 = new Item({
-  name: "Task1"
+  name: "Welcome to TodoList"
 });
 const item2 = new Item({
-  name: "Task2"
+  name: "Press + to add items"
 });
 const item3 = new Item({
-  name: "Task3"
+  name: "<------Click checkbox to delete items"
 });
 
 const defaultItems = [item1, item2, item3];
 
-app.get("/", function(req, res) {
+app.get("/",function(req,res){
+  res.render("home");
+});
+
+
+app.get("/find", function(req, res) {
 
   Item.find(function(err, items_retr) {
 
@@ -69,7 +102,6 @@ app.get("/", function(req, res) {
       }
     });
   });
-//let day = date();
 
 app.get("/:customListName",function(req,res){
   //console.log(req.params.customListName);
